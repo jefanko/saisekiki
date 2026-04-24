@@ -86,14 +86,23 @@ export default function Watch() {
         ]
       });
 
-      navigator.mediaSession.setActionHandler('play', () => videoRef.current?.play());
-      navigator.mediaSession.setActionHandler('pause', () => videoRef.current?.pause());
+      navigator.mediaSession.setActionHandler('play', () => {
+        videoRef.current?.play();
+        navigator.mediaSession.playbackState = 'playing';
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        videoRef.current?.pause();
+        navigator.mediaSession.playbackState = 'paused';
+      });
       navigator.mediaSession.setActionHandler('seekbackward', () => {
         if (videoRef.current) videoRef.current.currentTime -= 10;
       });
       navigator.mediaSession.setActionHandler('seekforward', () => {
         if (videoRef.current) videoRef.current.currentTime += 10;
       });
+      
+      // Setting playbackState helps iOS recognize active media
+      navigator.mediaSession.playbackState = 'playing';
     }
   }, [stream]);
 
@@ -122,6 +131,7 @@ export default function Watch() {
                 controls 
                 autoPlay 
                 playsInline
+                webkit-playsinline="true"
                 className="responsive-video" 
                 style={{ width: '100%', display: 'block' }}
                 onError={() => {
