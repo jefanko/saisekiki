@@ -13,6 +13,7 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const silentAudioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -42,19 +43,35 @@ export default function Watch() {
       const video = videoRef.current;
       
       if (isHls) {
-        if (Hls.isSupported()) {
+        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          // Prefer native HLS for iOS background support
+          video.src = stream.hls;
+        } else if (Hls.isSupported()) {
           const hls = new Hls();
           hls.loadSource(stream.hls);
           hls.attachMedia(video);
           return () => hls.destroy();
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = stream.hls;
         }
       } else {
         // For raw MP4/googlevideo URLs, using native src often bypasses 
         // some CORS restrictions that Hls.js XHR requests hit.
         video.src = stream.hls;
       }
+
+      const playSilent = () => {
+        silentAudioRef.current?.play().catch(() => {});
+      };
+      const pauseSilent = () => {
+        silentAudioRef.current?.pause();
+      };
+
+      video.addEventListener('play', playSilent);
+      video.addEventListener('pause', pauseSilent);
+
+      return () => {
+        video.removeEventListener('play', playSilent);
+        video.removeEventListener('pause', pauseSilent);
+      };
     }
   }, [stream]);
 
@@ -126,20 +143,23 @@ export default function Watch() {
         <div className="col s12 m12 l8">
           <div className="video-container" style={{ borderRadius: '16px', overflow: 'hidden', backgroundColor: '#000', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.05)' }}>
             {stream.hls ? (
-              <video 
-                ref={videoRef} 
-                controls 
-                autoPlay 
-                playsInline
-                webkit-playsinline="true"
-                className="responsive-video" 
-                style={{ width: '100%', display: 'block' }}
-                onError={() => {
-                  // If native playback fails (e.g. 403), force the iframe fallback
-                  console.log("Native playback failed, falling back to iframe");
-                  setStream({...stream, hls: ''}); 
-                }}
-              ></video>
+              <>
+                <audio ref={silentAudioRef} loop src="data:audio/wav;base64,UklGRigAAABXQVZRTU9OAhAAMAAAgD0AAIA9AAACAAgAZGF0YAgAAAAAAAAA"></audio>
+                <video 
+                  ref={videoRef} 
+                  controls 
+                  autoPlay 
+                  playsInline
+                  webkit-playsinline="true"
+                  className="responsive-video" 
+                  style={{ width: '100%', display: 'block' }}
+                  onError={() => {
+                    // If native playback fails (e.g. 403), force the iframe fallback
+                    console.log("Native playback failed, falling back to iframe");
+                    setStream({...stream, hls: ''}); 
+                  }}
+                ></video>
+              </>
             ) : (
               <iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${id}?autoplay=1`} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
             )}
