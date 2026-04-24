@@ -12,7 +12,7 @@ export default defineConfig({
           if (req.url?.startsWith('/api/yt')) {
             try {
               // Parse query strings manually
-              const [path, query] = req.url.split('?');
+              const [, query] = req.url.split('?');
               const params = new URLSearchParams(query);
               const fakeReq = {
                 method: req.method,

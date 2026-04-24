@@ -31,7 +31,7 @@ export default function Channel() {
         </div>
       )}
       
-      <div className="container" style={{ marginTop: channel.banner ? '-50px' : '2rem', position: 'relative', zChild: 10 }}>
+      <div className="container" style={{ marginTop: channel.banner ? '-50px' : '2rem', position: 'relative', zIndex: 10 }}>
         <div className="channel-header" style={{ display: 'flex', alignItems: 'flex-end', gap: '2rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
           <div style={{ padding: '4px', background: 'var(--bg-color)', borderRadius: '50%' }}>
             <img src={channel.avatar} style={{ width: '120px', height: '120px', borderRadius: '50%', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', border: '2px solid rgba(255,255,255,0.1)' }} alt="avatar" />

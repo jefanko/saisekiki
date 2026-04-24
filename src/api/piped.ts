@@ -2,7 +2,7 @@ import type { PipedVideo, PipedStreamResponse } from '../types/piped';
 
 const BASE_URL = '/api/yt';
 
-export async function getTrending(region: string = 'US'): Promise<PipedVideo[]> {
+export async function getTrending(): Promise<PipedVideo[]> {
   const response = await fetch(`${BASE_URL}?action=trending`);
   if (!response.ok) throw new Error('Failed to fetch trending videos');
   return response.json();
