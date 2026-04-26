@@ -108,6 +108,51 @@ export default function GlobalPlayer() {
     }
   }, [isMinimized, location.pathname]);
 
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isMinimized) return;
+    setDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX, y: clientY };
+  };
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragging) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+      
+      const dx = clientX - dragStart.current.x;
+      const dy = clientY - dragStart.current.y;
+      
+      setPosition(prev => ({
+        x: Math.max(0, prev.x - dx),
+        y: Math.max(0, prev.y - dy)
+      }));
+      
+      dragStart.current = { x: clientX, y: clientY };
+    };
+
+    const handleEnd = () => setDragging(false);
+
+    if (dragging) {
+      window.addEventListener('mousemove', handleMove);
+      window.addEventListener('mouseup', handleEnd);
+      window.addEventListener('touchmove', handleMove);
+      window.addEventListener('touchend', handleEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [dragging]);
+
   if (!currentVideo) return null;
 
   const handleMiniClick = () => {
@@ -130,12 +175,22 @@ export default function GlobalPlayer() {
     return { display: 'none' };
   };
 
+  const getMiniStyle = (): React.CSSProperties => {
+    return {
+      bottom: `${position.y}px`,
+      right: `${position.x}px`,
+      cursor: dragging ? 'grabbing' : 'grab'
+    };
+  };
+
   return (
     <div 
       className={`global-player-wrapper ${isMinimized ? 'minimized' : 'full'}`}
-      style={!isMinimized ? getFullStyle() : {}}
+      style={isMinimized ? getMiniStyle() : getFullStyle()}
+      onMouseDown={isMinimized ? handleDragStart : undefined}
+      onTouchStart={isMinimized ? handleDragStart : undefined}
     >
-      <div className="player-container" style={{ height: '100%' }}>
+      <div className="player-container" style={{ height: '100%', position: 'relative', pointerEvents: dragging ? 'none' : 'auto' }}>
         {loading && <div className="player-loader"><Loading /></div>}
         
         <audio ref={silentAudioRef} loop src="data:audio/wav;base64,UklGRigAAABXQVZRTU9OAhAAMAAAgD0AAIA9AAACAAgAZGF0YAgAAAAAAAAA"></audio>
@@ -149,7 +204,10 @@ export default function GlobalPlayer() {
             webkit-playsinline="true"
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onEnded={playNext}
+            onEnded={() => {
+              console.log("Video ended, triggering playNext");
+              playNext();
+            }}
             style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain', backgroundColor: '#000' }}
           />
         ) : (
@@ -159,19 +217,19 @@ export default function GlobalPlayer() {
         {isMinimized && (
           <div className="mini-info" onClick={handleMiniClick}>
             <div className="mini-text">
-              <span className="title">{currentVideo.title}</span>
+              <span className="title" title={currentVideo.title}>{currentVideo.title}</span>
               <span className="uploader">{currentVideo.uploaderName}</span>
             </div>
-            <div className="mini-controls">
-              <button onClick={(e) => { e.stopPropagation(); isPlaying ? videoRef.current?.pause() : videoRef.current?.play(); }}>
+            <div className="mini-controls" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => isPlaying ? videoRef.current?.pause() : videoRef.current?.play()}>
                 <i className="material-icons">{isPlaying ? 'pause' : 'play_arrow'}</i>
               </button>
-              {queue.length > 0 && (
-                <button onClick={(e) => { e.stopPropagation(); playNext(); }}>
+              {queue && queue.length > 0 && (
+                <button onClick={() => playNext()} title="Next from queue">
                   <i className="material-icons">skip_next</i>
                 </button>
               )}
-              <button onClick={(e) => { e.stopPropagation(); setVideo(null); }}>
+              <button onClick={() => setVideo(null)}>
                 <i className="material-icons">close</i>
               </button>
             </div>

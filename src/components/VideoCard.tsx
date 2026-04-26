@@ -3,14 +3,14 @@ import type { PipedVideo } from '../types/piped';
 import { usePlayer } from '../context/PlayerContext';
 
 export default function VideoCard({ video }: { video: PipedVideo }) {
-  const { setVideo, addToQueue } = usePlayer();
+  const { setVideo, addToQueue, setMinimized } = usePlayer();
   const videoId = new URLSearchParams(video.url.split('?')[1]).get('v');
 
   if (!videoId) return null;
 
-  const handlePlay = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setVideo({ ...video, id: videoId } as any);
+  const handlePlay = () => {
+    // We let the Link handle navigation, Watch.tsx will handle setVideo
+    setMinimized(false);
   };
 
   const handleAddToQueue = (e: React.MouseEvent) => {

@@ -47,7 +47,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (queue.length > 0) {
       const nextVideo = queue[0];
       setQueue(prev => prev.slice(1));
-      setCurrentVideo(nextVideo);
+      setVideo(nextVideo);
     }
   };
 

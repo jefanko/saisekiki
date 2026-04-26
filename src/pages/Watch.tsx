@@ -53,6 +53,14 @@ export default function Watch() {
                 <div 
                   style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} 
                   className="hoverable"
+                  onClick={() => setMinimized(true)}
+                >
+                  <i className="material-icons" style={{ fontSize: '20px' }}>picture_in_picture_alt</i>
+                  <span style={{ fontWeight: 600 }}>Minimize</span>
+                </div>
+                <div 
+                  style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} 
+                  className="hoverable"
                   onClick={() => {
                     navigator.clipboard.writeText(window.location.href);
                     M.toast({ html: 'Link copied!', classes: 'rounded' });
