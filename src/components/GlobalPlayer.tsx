@@ -6,7 +6,7 @@ import { getStreamDetails } from '../api/piped';
 import Loading from './Loading';
 
 export default function GlobalPlayer() {
-  const { currentVideo, setVideo, stream, setStream, isMinimized, setMinimized, playNext, isPlaying, setPlaying } = usePlayer();
+  const { currentVideo, setVideo, stream, setStream, isMinimized, setMinimized, playNext, isPlaying, setPlaying, queue } = usePlayer();
   const videoRef = useRef<HTMLVideoElement>(null);
   const silentAudioRef = useRef<HTMLAudioElement>(null);
   const location = useLocation();
@@ -166,6 +166,11 @@ export default function GlobalPlayer() {
               <button onClick={(e) => { e.stopPropagation(); isPlaying ? videoRef.current?.pause() : videoRef.current?.play(); }}>
                 <i className="material-icons">{isPlaying ? 'pause' : 'play_arrow'}</i>
               </button>
+              {queue.length > 0 && (
+                <button onClick={(e) => { e.stopPropagation(); playNext(); }}>
+                  <i className="material-icons">skip_next</i>
+                </button>
+              )}
               <button onClick={(e) => { e.stopPropagation(); setVideo(null); }}>
                 <i className="material-icons">close</i>
               </button>

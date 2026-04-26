@@ -6,7 +6,7 @@ import Comments from '../components/Comments';
 
 export default function Watch() {
   const { id } = useParams();
-  const { currentVideo, setVideo, stream, setMinimized } = usePlayer();
+  const { currentVideo, setVideo, stream, setMinimized, queue, playNext, removeFromQueue } = usePlayer();
 
   useEffect(() => {
     if (id && (!currentVideo || currentVideo.id !== id)) {
@@ -82,6 +82,38 @@ export default function Watch() {
         </div>
         
         <div className="col s12 m12 l4">
+          {queue.length > 0 && (
+            <>
+              <h5 style={{ fontWeight: 600, marginBottom: '1rem', fontSize: '1.2rem', paddingLeft: '0.5rem', color: 'var(--primary-accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <i className="material-icons">queue_music</i>
+                Queue ({queue.length})
+              </h5>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '16px' }}>
+                {queue.map((video, idx) => (
+                  <div key={`queue-${idx}`} style={{ display: 'flex', gap: '0.8rem', position: 'relative' }}>
+                    <Link to={video.url!} onClick={() => playNext()} style={{ display: 'flex', gap: '0.8rem', flex: 1, textDecoration: 'none' }}>
+                      <div style={{ flex: '0 0 120px' }}>
+                        <img src={video.thumbnail} alt={video.title} style={{ width: '100%', borderRadius: '8px', aspectRatio: '16/9', objectFit: 'cover' }} />
+                      </div>
+                      <div style={{ flex: '1', minWidth: 0 }}>
+                        <h6 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {video.title}
+                        </h6>
+                        <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{video.uploaderName}</p>
+                      </div>
+                    </Link>
+                    <button 
+                      onClick={() => removeFromQueue(idx)}
+                      style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                    >
+                      <i className="material-icons" style={{ fontSize: '18px' }}>close</i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
           <h5 style={{ fontWeight: 600, marginBottom: '1.5rem', fontSize: '1.2rem', paddingLeft: '0.5rem', color: 'var(--text-main)' }}>Up Next</h5>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {stream?.relatedStreams?.map((video, idx) => (
