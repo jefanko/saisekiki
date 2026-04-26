@@ -13,6 +13,7 @@ export interface PipedVideo {
   uploaded: number;
   uploaderVerified: boolean;
   isShort: boolean;
+  id?: string;
 }
 
 export interface PipedStreamResponse {

@@ -1,52 +1,70 @@
 import { Link } from 'react-router-dom';
 import type { PipedVideo } from '../types/piped';
+import { usePlayer } from '../context/PlayerContext';
 
 export default function VideoCard({ video }: { video: PipedVideo }) {
+  const { setVideo, addToQueue } = usePlayer();
   const videoId = new URLSearchParams(video.url.split('?')[1]).get('v');
 
-  if (!videoId) return null; // Fallback if url is malformed
+  if (!videoId) return null;
+
+  const handlePlay = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setVideo({ ...video, id: videoId } as any);
+  };
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToQueue({ ...video, id: videoId } as any);
+    M.toast({ html: 'Added to queue', classes: 'rounded' });
+  };
 
   return (
-    <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="card video-card-glass" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <div className="card-image" style={{ position: 'relative' }}>
-        <Link to={`/watch/${videoId}`}>
+        <Link to={`/watch/${videoId}`} onClick={handlePlay}>
           <img src={video.thumbnail} alt={video.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
+          <div className="card-overlay">
+            <i className="material-icons">play_arrow</i>
+          </div>
           {video.duration > 0 && (
-            <span style={{
-              position: 'absolute',
-              bottom: '8px',
-              right: '8px',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              color: 'white',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              fontSize: '0.8rem',
-              fontWeight: 500
-            }}>
+            <span className="video-duration">
               {new Date(video.duration * 1000).toISOString().substr(11, 8).replace(/^[0:]+/, '')}
             </span>
           )}
         </Link>
       </div>
-      <div className="card-content" style={{ padding: '16px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="card-content" style={{ padding: '12px', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
           {video.uploaderAvatar && (
             <img 
               src={video.uploaderAvatar} 
               alt={video.uploaderName} 
-              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
+              style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} 
             />
           )}
-          <div>
-            <span className="card-title" style={{ fontSize: '1.05rem', fontWeight: 600, lineHeight: '1.4', marginBottom: '4px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={video.title}>
-              <Link to={`/watch/${videoId}`}>{video.title}</Link>
+          <div style={{ flexGrow: 1, minWidth: 0 }}>
+            <span className="card-title-text" title={video.title}>
+              <Link to={`/watch/${videoId}`} onClick={handlePlay} style={{ color: 'var(--text-main)' }}>{video.title}</Link>
             </span>
-            <p className="grey-text" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              {video.uploaderName} {video.uploaderVerified && <i className="material-icons" style={{ fontSize: '14px', color: 'var(--text-muted)' }}>check_circle</i>}
-            </p>
-            <p className="grey-text" style={{ fontSize: '0.85rem' }}>
-              {video.views.toLocaleString()} views • {video.uploadedDate || 'Unknown date'}
-            </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ minWidth: 0 }}>
+                <p className="grey-text" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {video.uploaderName}
+                </p>
+                <p className="grey-text" style={{ fontSize: '0.8rem' }}>
+                  {video.views.toLocaleString()} views
+                </p>
+              </div>
+              <button 
+                onClick={handleAddToQueue}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                title="Add to queue"
+              >
+                <i className="material-icons" style={{ fontSize: '20px' }}>playlist_add</i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
