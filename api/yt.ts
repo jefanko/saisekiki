@@ -51,17 +51,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (action === 'stream') {
       const id = req.query.id as string;
       let info = await youtube.getInfo(id);
-      
+
       let streamUrl = '';
       const tryExtract = (vInfo: any) => {
         try {
           const format = vInfo.chooseFormat({ type: 'video+audio', quality: 'best' });
           return format.url || '';
-        } catch(e) {
+        } catch (e) {
           try {
             const format = vInfo.chooseFormat({ type: 'video', quality: 'best' });
             return format.url || '';
-          } catch(e2) {
+          } catch (e2) {
             return '';
           }
         }
@@ -74,7 +74,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           const androidInfo = await youtube.getInfo(id, { client: 'ANDROID' });
           streamUrl = tryExtract(androidInfo);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       const relatedStreams = info.watch_next_feed
@@ -91,16 +91,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         views: info.basic_info.view_count || 0,
         likes: info.basic_info.like_count || 0,
         hls: streamUrl,
-        relatedStreams 
+        relatedStreams
       };
-      
+
       res.status(200).json(streamData);
 
     } else if (action === 'channel') {
       const id = req.query.id as string;
       const channel = await youtube.getChannel(id);
       const videos = await channel.getVideos();
-      
+
       const channelData = {
         name: channel.metadata.title,
         description: channel.metadata.description,
@@ -114,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (action === 'comments') {
       const id = req.query.id as string;
       const comments = await youtube.getComments(id);
-      
+
       const results = (comments.contents || []).map((thread: any) => {
         const c = thread.comment;
         if (!c) return null;

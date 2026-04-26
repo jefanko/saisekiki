@@ -103,9 +103,11 @@ export default function Watch() {
         ]
       });
 
-      navigator.mediaSession.setActionHandler('play', () => {
-        videoRef.current?.play();
-        navigator.mediaSession.playbackState = 'playing';
+      navigator.mediaSession.setActionHandler('play', async () => {
+        try {
+          await videoRef.current?.play();
+          navigator.mediaSession.playbackState = 'playing';
+        } catch (e) {}
       });
       navigator.mediaSession.setActionHandler('pause', () => {
         videoRef.current?.pause();
@@ -120,6 +122,26 @@ export default function Watch() {
       
       // Setting playbackState helps iOS recognize active media
       navigator.mediaSession.playbackState = 'playing';
+
+      const updatePositionState = () => {
+        if ('setPositionState' in navigator.mediaSession && videoRef.current && isFinite(videoRef.current.duration)) {
+          try {
+            navigator.mediaSession.setPositionState({
+              duration: videoRef.current.duration,
+              playbackRate: videoRef.current.playbackRate,
+              position: videoRef.current.currentTime,
+            });
+          } catch (e) {}
+        }
+      };
+
+      const video = videoRef.current;
+      if (video) {
+        video.addEventListener('timeupdate', updatePositionState);
+        return () => {
+          video.removeEventListener('timeupdate', updatePositionState);
+        };
+      }
     }
   }, [stream]);
 
