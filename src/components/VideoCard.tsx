@@ -3,7 +3,7 @@ import type { PipedVideo } from '../types/piped';
 import { usePlayer } from '../context/PlayerContext';
 
 export default function VideoCard({ video }: { video: PipedVideo }) {
-  const { setVideo, addToQueue, setMinimized } = usePlayer();
+  const { addToQueue, setMinimized } = usePlayer();
   const videoId = new URLSearchParams(video.url.split('?')[1]).get('v');
 
   if (!videoId) return null;

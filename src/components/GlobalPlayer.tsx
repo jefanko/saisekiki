@@ -190,7 +190,7 @@ export default function GlobalPlayer() {
       onMouseDown={isMinimized ? handleDragStart : undefined}
       onTouchStart={isMinimized ? handleDragStart : undefined}
     >
-      <div className="player-container" style={{ height: '100%', position: 'relative', pointerEvents: dragging ? 'none' : 'auto' }}>
+      <div className="player-container" style={{ height: isMinimized ? 'auto' : '100%', position: 'relative', pointerEvents: dragging ? 'none' : 'auto' }}>
         {loading && <div className="player-loader"><Loading /></div>}
         
         <audio ref={silentAudioRef} loop src="data:audio/wav;base64,UklGRigAAABXQVZRTU9OAhAAMAAAgD0AAIA9AAACAAgAZGF0YAgAAAAAAAAA"></audio>
@@ -198,6 +198,7 @@ export default function GlobalPlayer() {
         {stream?.hls ? (
           <video 
             ref={videoRef} 
+            className="main-video-element"
             controls={!isMinimized}
             autoPlay 
             playsInline
@@ -208,10 +209,22 @@ export default function GlobalPlayer() {
               console.log("Video ended, triggering playNext");
               playNext();
             }}
-            style={{ width: '100%', height: '100%', display: 'block', objectFit: 'contain', backgroundColor: '#000' }}
+            style={!isMinimized ? {
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              objectFit: 'contain',
+              backgroundColor: '#000'
+            } : {}}
           />
         ) : (
-          !loading && <iframe style={{ width: '100%', height: '100%' }} src={`https://www.youtube.com/embed/${currentVideo.id}?autoplay=1`} frameBorder="0" allowFullScreen></iframe>
+          !loading && <iframe 
+            className="main-video-element"
+            style={!isMinimized ? { width: '100%', height: '100%' } : {}} 
+            src={`https://www.youtube.com/embed/${currentVideo.id}?autoplay=1`} 
+            frameBorder="0" 
+            allowFullScreen
+          ></iframe>
         )}
 
         {isMinimized && (
