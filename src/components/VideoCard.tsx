@@ -1,16 +1,25 @@
 import { Link } from 'react-router-dom';
-import type { PipedVideo } from '../types/piped';
+import type { PipedVideo, PipedPlaylist } from '../types/piped';
 import { usePlayer } from '../context/PlayerContext';
 
-export default function VideoCard({ video }: { video: PipedVideo }) {
+export default function VideoCard({ video }: { video: PipedVideo | PipedPlaylist }) {
   const { addToQueue, setMinimized } = usePlayer();
-  const videoId = new URLSearchParams(video.url.split('?')[1]).get('v');
 
-  if (!videoId) return null;
+  const isPlaylist = video.type === 'playlist';
+
+  let targetUrl = video.url;
+  let videoId: string | null = null;
+
+  if (!isPlaylist) {
+    videoId = new URLSearchParams(video.url.split('?')[1]).get('v');
+    targetUrl = `/watch/${videoId}`;
+    if (!videoId) return null;
+  }
 
   const handlePlay = () => {
-    // We let the Link handle navigation, Watch.tsx will handle setVideo
-    setMinimized(false);
+    if (!isPlaylist) {
+      setMinimized(false);
+    }
   };
 
   const handleAddToQueue = (e: React.MouseEvent) => {
@@ -23,14 +32,20 @@ export default function VideoCard({ video }: { video: PipedVideo }) {
   return (
     <div className="card video-card-glass" style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
       <div className="card-image" style={{ position: 'relative' }}>
-        <Link to={`/watch/${videoId}`} onClick={handlePlay}>
+        <Link to={targetUrl} onClick={handlePlay}>
           <img src={video.thumbnail} alt={video.title} style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover' }} />
           <div className="card-overlay">
-            <i className="material-icons">play_arrow</i>
+            <i className="material-icons">{isPlaylist ? 'playlist_play' : 'play_arrow'}</i>
           </div>
-          {video.duration > 0 && (
+          {!isPlaylist && (video as PipedVideo).duration > 0 && (
             <span className="video-duration">
-              {new Date(video.duration * 1000).toISOString().substr(11, 8).replace(/^[0:]+/, '')}
+              {new Date((video as PipedVideo).duration * 1000).toISOString().substr(11, 8).replace(/^[0:]+/, '')}
+            </span>
+          )}
+          {isPlaylist && (
+            <span className="video-duration" style={{ background: 'rgba(0,0,0,0.8)' }}>
+              <i className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '4px' }}>playlist_play</i>
+              {(video as PipedPlaylist).videos}
             </span>
           )}
         </Link>
@@ -46,24 +61,28 @@ export default function VideoCard({ video }: { video: PipedVideo }) {
           )}
           <div style={{ flexGrow: 1, minWidth: 0 }}>
             <span className="card-title-text" title={video.title}>
-              <Link to={`/watch/${videoId}`} onClick={handlePlay} style={{ color: 'var(--text-main)' }}>{video.title}</Link>
+              <Link to={targetUrl} onClick={handlePlay} style={{ color: 'var(--text-main)' }}>{video.title}</Link>
             </span>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ minWidth: 0 }}>
                 <p className="grey-text" style={{ fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {video.uploaderName}
                 </p>
-                <p className="grey-text" style={{ fontSize: '0.8rem' }}>
-                  {video.views.toLocaleString()} views
-                </p>
+                {!isPlaylist && (
+                  <p className="grey-text" style={{ fontSize: '0.8rem' }}>
+                    {(video as PipedVideo).views.toLocaleString()} views
+                  </p>
+                )}
               </div>
-              <button 
-                onClick={handleAddToQueue}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-                title="Add to queue"
-              >
-                <i className="material-icons" style={{ fontSize: '20px' }}>playlist_add</i>
-              </button>
+              {!isPlaylist && (
+                <button
+                  onClick={handleAddToQueue}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                  title="Add to queue"
+                >
+                  <i className="material-icons" style={{ fontSize: '20px' }}>playlist_add</i>
+                </button>
+              )}
             </div>
           </div>
         </div>

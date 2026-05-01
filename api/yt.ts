@@ -7,6 +7,40 @@ async function getYT() {
   return yt;
 }
 
+function mapItem(item: any) {
+  if (item.type === 'Playlist') {
+    return {
+      url: `/playlist/${item.id}`,
+      type: 'playlist',
+      title: item.title?.text || item.title || 'Unknown Playlist',
+      thumbnail: item.thumbnails?.[0]?.url || '',
+      uploaderName: item.author?.name || item.author || 'Unknown Channel',
+      uploaderUrl: `/channel/${item.author?.channel_id || item.author?.id || ''}`,
+      uploaderAvatar: '',
+      videos: item.video_count?.text ? parseInt(item.video_count.text.replace(/[^0-9]/g, '')) : 0,
+      id: item.id
+    };
+  }
+
+  return {
+    url: `/watch?v=${item.id}`,
+    type: 'stream',
+    title: item.title?.text || item.title || 'Unknown Title',
+    thumbnail: item.thumbnails?.[0]?.url || '',
+    uploaderName: item.author?.name || item.author || 'Unknown Channel',
+    uploaderUrl: `/channel/${item.author?.channel_id || item.author?.id || ''}`,
+    uploaderAvatar: item.author?.thumbnails?.[0]?.url || '',
+    uploadedDate: item.published?.text || '',
+    shortDescription: item.description?.text || '',
+    duration: item.duration?.seconds || 0,
+    views: typeof item.view_count === 'number' ? item.view_count : 0,
+    uploaded: 0,
+    uploaderVerified: item.author?.is_verified || false,
+    isShort: item.is_short || false,
+    id: item.id
+  };
+}
+
 function mapVideo(video: any) {
   return {
     url: `/watch?v=${video.id}`,
@@ -44,36 +78,67 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     } else if (action === 'search') {
       const q = req.query.q as string;
-      const search = await youtube.search(q, { type: 'video' });
-      const results = search.videos.map(mapVideo);
+      const search = await youtube.search(q);
+      const results = search.results?.map(mapItem).filter((item: any) => item.type === 'stream' || item.type === 'playlist') || [];
       res.status(200).json({ items: results });
+
+    } else if (action === 'playlist') {
+      const id = req.query.id as string;
+      const playlist = await youtube.getPlaylist(id);
+
+      const playlistData = {
+        title: playlist.info.title,
+        description: playlist.info.description,
+        author: playlist.info.author.name,
+        authorUrl: `/channel/${playlist.info.author.channel_id}`,
+        authorAvatar: playlist.info.author.thumbnails?.[0]?.url || '',
+        views: playlist.info.views,
+        updated: playlist.info.last_updated,
+        videos: playlist.items.map(mapVideo)
+      };
+
+      res.status(200).json(playlistData);
 
     } else if (action === 'stream') {
       const id = req.query.id as string;
       let info = await youtube.getInfo(id);
 
       let streamUrl = '';
+      let audioOnlyUrl = '';
+
       const tryExtract = (vInfo: any) => {
+        let vUrl = '';
+        let aUrl = '';
+
         try {
           const format = vInfo.chooseFormat({ type: 'video+audio', quality: 'best' });
-          return format.url || '';
+          vUrl = format.url || '';
         } catch (e) {
           try {
             const format = vInfo.chooseFormat({ type: 'video', quality: 'best' });
-            return format.url || '';
-          } catch (e2) {
-            return '';
-          }
+            vUrl = format.url || '';
+          } catch (e2) { }
         }
+
+        try {
+          const audioFormat = vInfo.chooseFormat({ type: 'audio', quality: 'best' });
+          aUrl = audioFormat.url || '';
+        } catch (e) { }
+
+        return { vUrl, aUrl };
       };
 
-      streamUrl = tryExtract(info);
+      const urls = tryExtract(info);
+      streamUrl = urls.vUrl;
+      audioOnlyUrl = urls.aUrl;
 
       // If WEB client fails, try ANDROID client which is more permissive
       if (!streamUrl) {
         try {
           const androidInfo = await youtube.getInfo(id, { client: 'ANDROID' });
-          streamUrl = tryExtract(androidInfo);
+          const aUrls = tryExtract(androidInfo);
+          streamUrl = aUrls.vUrl || streamUrl;
+          audioOnlyUrl = aUrls.aUrl || audioOnlyUrl;
         } catch (e) { }
       }
 
@@ -87,10 +152,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         uploadDate: info.basic_info.start_timestamp ? new Date((info.basic_info.start_timestamp as any) * 1000).toLocaleDateString() : 'Unknown',
         uploader: info.basic_info.channel?.name || 'Unknown',
         uploaderUrl: `/channel/${info.basic_info.channel_id || ''}`,
-        uploaderAvatar: (info as any).secondary_info?.owner?.author?.thumbnails?.[0]?.url || '',
+        uploaderAvatar: info.basic_info.channel?.thumbnails?.[0]?.url || (info as any).secondary_info?.owner?.author?.thumbnails?.[0]?.url || '',
         views: info.basic_info.view_count || 0,
         likes: info.basic_info.like_count || 0,
         hls: streamUrl,
+        audioOnlyUrl: audioOnlyUrl,
         relatedStreams
       };
 

@@ -1,3 +1,15 @@
+export interface PipedPlaylist {
+  url: string;
+  type: string;
+  title: string;
+  thumbnail: string;
+  uploaderName: string;
+  uploaderUrl: string;
+  uploaderAvatar: string;
+  videos: number;
+  id?: string;
+}
+
 export interface PipedVideo {
   url: string;
   type: string;
@@ -27,6 +39,7 @@ export interface PipedStreamResponse {
   likes: number;
   dislikes: number;
   hls: string;
+  audioOnlyUrl?: string;
   videoStreams: any[];
   audioStreams: any[];
   relatedStreams: PipedVideo[];

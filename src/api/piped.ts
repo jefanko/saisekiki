@@ -20,6 +20,12 @@ export async function getStreamDetails(videoId: string): Promise<PipedStreamResp
   return response.json();
 }
 
+export async function getPlaylistDetails(playlistId: string): Promise<any> {
+  const response = await fetch(`${BASE_URL}?action=playlist&id=${playlistId}`);
+  if (!response.ok) throw new Error('Failed to fetch playlist details');
+  return response.json();
+}
+
 export async function getChannelDetails(channelId: string): Promise<any> {
   const response = await fetch(`${BASE_URL}?action=channel&id=${channelId}`);
   if (!response.ok) throw new Error('Failed to fetch channel details');

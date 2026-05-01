@@ -6,7 +6,7 @@ import { getStreamDetails } from '../api/piped';
 import Loading from './Loading';
 
 export default function GlobalPlayer() {
-  const { currentVideo, setVideo, stream, setStream, isMinimized, setMinimized, playNext, isPlaying, setPlaying, queue } = usePlayer();
+  const { currentVideo, setVideo, stream, setStream, isMinimized, setMinimized, playNext, isPlaying, setPlaying, queue, isAudioOnly } = usePlayer();
   const videoRef = useRef<HTMLVideoElement>(null);
   const silentAudioRef = useRef<HTMLAudioElement>(null);
   const location = useLocation();
@@ -38,21 +38,36 @@ export default function GlobalPlayer() {
 
   // Video Setup (HLS/Native)
   useEffect(() => {
-    if (stream?.hls && videoRef.current) {
+    if (stream && videoRef.current) {
       const video = videoRef.current;
-      const isHls = stream.hls.includes('.m3u8');
+      const sourceUrl = isAudioOnly && stream.audioOnlyUrl ? stream.audioOnlyUrl : stream.hls;
       
+      if (!sourceUrl) return;
+
+      const isHls = sourceUrl.includes('.m3u8');
+
+      const currentTime = video.currentTime;
+      const wasPlaying = !video.paused;
+
       if (isHls) {
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = stream.hls;
+          video.src = sourceUrl;
         } else if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource(stream.hls);
+          hls.loadSource(sourceUrl);
           hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+             video.currentTime = currentTime;
+             if (wasPlaying) video.play().catch(() => {});
+          });
+
           return () => hls.destroy();
         }
       } else {
-        video.src = stream.hls;
+        video.src = sourceUrl;
+        video.currentTime = currentTime;
+        if (wasPlaying) video.play().catch(() => {});
       }
 
       const playSilent = () => silentAudioRef.current?.play().catch(() => {});
@@ -65,7 +80,7 @@ export default function GlobalPlayer() {
         video.removeEventListener('pause', pauseSilent);
       };
     }
-  }, [stream]);
+  }, [stream, isAudioOnly]);
 
   // Media Session API
   useEffect(() => {
@@ -183,6 +198,12 @@ export default function GlobalPlayer() {
     };
   };
 
+  const handlePlaybackRateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = parseFloat(e.target.value);
+    }
+  };
+
   return (
     <div 
       className={`global-player-wrapper ${isMinimized ? 'minimized' : 'full'}`}
@@ -195,28 +216,55 @@ export default function GlobalPlayer() {
         
         <audio ref={silentAudioRef} loop src="data:audio/wav;base64,UklGRigAAABXQVZRTU9OAhAAMAAAgD0AAIA9AAACAAgAZGF0YAgAAAAAAAAA"></audio>
         
-        {stream?.hls ? (
-          <video 
-            ref={videoRef} 
-            className="main-video-element"
-            controls={!isMinimized}
-            autoPlay 
-            playsInline
-            webkit-playsinline="true"
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
-            onEnded={() => {
-              console.log("Video ended, triggering playNext");
-              playNext();
-            }}
-            style={!isMinimized ? {
-              width: '100%',
-              height: '100%',
-              display: 'block',
-              objectFit: 'contain',
-              backgroundColor: '#000'
-            } : {}}
-          />
+        {stream?.hls || stream?.audioOnlyUrl ? (
+          <>
+            <video
+              ref={videoRef}
+              className="main-video-element"
+              controls={!isMinimized}
+              autoPlay
+              playsInline
+              webkit-playsinline="true"
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => {
+                console.log("Video ended, triggering playNext");
+                playNext();
+              }}
+              style={!isMinimized ? {
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                objectFit: 'contain',
+                backgroundColor: '#000'
+              } : {}}
+              poster={isAudioOnly && stream?.uploaderAvatar ? stream.uploaderAvatar : undefined}
+            />
+            {isAudioOnly && !isMinimized && stream?.uploaderAvatar && (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', pointerEvents: 'none' }}>
+                <img src={stream.uploaderAvatar} alt="Audio only" style={{ width: '120px', height: '120px', borderRadius: '50%', marginBottom: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} />
+                <h5 style={{ color: '#fff', margin: 0, fontWeight: 600 }}>Audio Mode</h5>
+              </div>
+            )}
+            {!isMinimized && (
+              <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+                <select
+                  onChange={handlePlaybackRateChange}
+                  defaultValue="1"
+                  style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.6)', color: 'white', border: 'none', borderRadius: '4px', padding: '4px 8px', outline: 'none', cursor: 'pointer' }}
+                >
+                  <option value="0.25">0.25x</option>
+                  <option value="0.5">0.5x</option>
+                  <option value="0.75">0.75x</option>
+                  <option value="1">1x (Normal)</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="1.75">1.75x</option>
+                  <option value="2">2x</option>
+                </select>
+              </div>
+            )}
+          </>
         ) : (
           !loading && <iframe 
             className="main-video-element"
