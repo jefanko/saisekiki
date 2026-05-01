@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Search from './pages/Search';
 import Watch from './pages/Watch';
 import Channel from './pages/Channel';
+import Playlist from './pages/Playlist';
 import NotFound from './pages/NotFound';
 
 import { PlayerProvider } from './context/PlayerContext';
@@ -20,6 +21,7 @@ function App() {
             <Route path="/search/:query" element={<Search />} />
             <Route path="/watch/:id" element={<Watch />} />
             <Route path="/channel/:id" element={<Channel />} />
+            <Route path="/playlist/:id" element={<Playlist />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

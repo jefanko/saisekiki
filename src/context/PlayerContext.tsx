@@ -8,6 +8,7 @@ interface PlayerContextType {
   queue: Partial<PipedVideo>[];
   isMinimized: boolean;
   isPlaying: boolean;
+  isAudioOnly: boolean;
   setVideo: (video: Partial<PipedVideo> | null) => void;
   setStream: (stream: PipedStreamResponse | null) => void;
   addToQueue: (video: Partial<PipedVideo>) => void;
@@ -16,6 +17,7 @@ interface PlayerContextType {
   playNext: () => void;
   setMinimized: (minimized: boolean) => void;
   setPlaying: (playing: boolean) => void;
+  setIsAudioOnly: (isAudioOnly: boolean) => void;
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -26,6 +28,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<Partial<PipedVideo>[]>([]);
   const [isMinimized, setMinimized] = useState(false);
   const [isPlaying, setPlaying] = useState(false);
+  const [isAudioOnly, setIsAudioOnly] = useState(false);
 
   const setVideo = (video: Partial<PipedVideo> | null) => {
     setCurrentVideo(video);
@@ -53,8 +56,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlayerContext.Provider value={{
-      currentVideo, stream, queue, isMinimized, isPlaying,
-      setVideo, setStream, addToQueue, removeFromQueue, clearQueue, playNext, setMinimized, setPlaying
+      currentVideo, stream, queue, isMinimized, isPlaying, isAudioOnly,
+      setVideo, setStream, addToQueue, removeFromQueue, clearQueue, playNext, setMinimized, setPlaying, setIsAudioOnly
     }}>
       {children}
     </PlayerContext.Provider>

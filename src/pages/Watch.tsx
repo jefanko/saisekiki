@@ -6,7 +6,7 @@ import Comments from '../components/Comments';
 
 export default function Watch() {
   const { id } = useParams();
-  const { currentVideo, setVideo, stream, setMinimized, queue, playNext, removeFromQueue } = usePlayer();
+  const { currentVideo, setVideo, stream, setMinimized, queue, playNext, removeFromQueue, isAudioOnly, setIsAudioOnly } = usePlayer();
 
   useEffect(() => {
     if (id && (!currentVideo || currentVideo.id !== id)) {
@@ -49,6 +49,14 @@ export default function Watch() {
                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} className="hoverable">
                   <i className="material-icons" style={{ fontSize: '20px' }}>thumb_up</i>
                   <span style={{ fontWeight: 600 }}>{stream?.likes ? stream.likes.toLocaleString() : 'Like'}</span>
+                </div>
+                <div
+                  style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', color: isAudioOnly ? 'var(--primary-accent)' : 'inherit' }}
+                  className="hoverable"
+                  onClick={() => setIsAudioOnly(!isAudioOnly)}
+                >
+                  <i className="material-icons" style={{ fontSize: '20px' }}>headphones</i>
+                  <span style={{ fontWeight: 600 }}>Background Play</span>
                 </div>
                 <div 
                   style={{ background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }} 
